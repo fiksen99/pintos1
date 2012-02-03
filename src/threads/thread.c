@@ -349,7 +349,7 @@ thread_set_priority (int new_priority)
     priority change. If true, then nothing happens. Otherwise, the
     thread yields.*/
   if(!is_current_highest_priority()){
-    add_thread_to_ready_list();    
+    //Do I need to add the current thread to the ready list?  
     thread_yield();    
   }
 }
@@ -618,10 +618,4 @@ is_current_highest_priority(void)
 struct thread * 
 priority_of_next_thread(){
   return next_thread_to_run()->priority;
-}
-
-//Adds current thread to ready list.
-void
-add_thread_to_ready_list(void){
-  //Write this code.
 }
