@@ -85,47 +85,24 @@ timer_elapsed (int64_t then)
 }
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
-   be turned on. */
+   be turned on.
+   Re-implemented for task 1 without a busy wait. */
 void
 timer_sleep (int64_t ticks) 
 {
 
-// re-implement without busy wait
-
-// make the current thread sleep
-// have an interrupt handler which wakes up the thread
-// how to call the interrupt handler?
-// - add an if to thread_tick in thread.c
-
+  // A call with negative value for ticks should not block.
   if (ticks <= 0)
     return;
+
+  // Record the time (in ticks) when the thread should wake.
   thread_current ()->wake_ticks = timer_ticks () + ticks;
+
+  // Make sure the cpu can be interrupted to wake up this thread.
   ASSERT (intr_get_level () == INTR_ON);
+
+  // Block the calling thread.
   thread_block ();
-
-/*
-put this code in thread_tick
-n.b. interrupts are disabled, minimise computation
-if (...->wake_ticks != 0 && timer_ticks() >= ...->wake_ticks)
-{
-  thread_unblock(...)
-  start running thread ...
-  ...->wake_ticks = 0;
-}
-re-enable interrupts (or at least restore old level)
-*/
-
-/*
-need to add wake_ticks to struct thread, initialise it in thread_create() and thread_init()
-*/
-
-/*
-  int64_t start = timer_ticks ();
-
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
-*/
 
 }
 

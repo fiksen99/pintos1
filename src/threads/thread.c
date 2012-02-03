@@ -98,6 +98,10 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
+     value to indicate that it is not asleep.*/
+  initial_thread->wake_ticks = 0;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -118,7 +122,8 @@ thread_start (void)
 }
 
 /* Called by the timer interrupt handler at each timer tick.
-   Thus, this function runs in an external interrupt context. */
+   Thus, this function runs in an external interrupt context.
+   N.B. Interrupts are disabled, minimise computation. */
 void
 thread_tick (void) 
 {
@@ -137,6 +142,17 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
+  /* If the thread is sleeping and enough ticks have elapsed, the thread is
+     unblocked and wake_ticks is reset. */
+  if (t->wake_ticks != 0 && timer_ticks() >= t->wake_ticks)
+  {
+    thread_unblock(t);
+    // Need to explicitly start the thread?
+
+    // Reset time when the thread should be woken to n/a
+    t->wake_ticks = 0;
+  }
 }
 
 /* Prints thread statistics. */
@@ -203,6 +219,10 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
+  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
+     value to indicate that it is not asleep.*/
+  t->wake_ticks = 0;
 
   intr_set_level (old_level);
 
