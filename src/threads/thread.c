@@ -590,3 +590,17 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+/* Methods added by us */
+
+// Returns true if the current thread has the highest priority
+bool is_current_highest_priority(void)
+{
+	int current_thread_priority = thread_get_priority();
+	struct thread* next_thread = next_thread_to_run();
+	int next_thread_priority = next_thread->priority;
+	if(current_thread_priority <= next_thread_priority){
+		return false;
+	}
+	return true; 
+}
