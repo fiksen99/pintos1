@@ -101,8 +101,12 @@ timer_sleep (int64_t ticks)
   // Make sure the cpu can be interrupted to wake up this thread.
   ASSERT (intr_get_level () == INTR_ON);
 
+  intr_set_level(INTR_OFF);
+
   // Block the calling thread.
   thread_block ();
+
+  intr_set_level(INTR_ON);
 
 }
 

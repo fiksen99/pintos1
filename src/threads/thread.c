@@ -4,6 +4,7 @@
 #include <random.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
@@ -11,6 +12,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -145,7 +147,8 @@ thread_tick (void)
 
   /* If the thread is sleeping and enough ticks have elapsed, the thread is
      unblocked and wake_ticks is reset. */
-  if (t->wake_ticks != 0 && timer_ticks() >= t->wake_ticks)
+  printf("%"PRIi64" "PRIi64"\n", timer_ticks (), t->wake_ticks);
+  if (t->wake_ticks != 0 && timer_ticks () >= t->wake_ticks)
   {
     thread_unblock(t);
     // Need to explicitly start the thread?
