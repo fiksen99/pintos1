@@ -98,8 +98,10 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    /* Task 1: time (in ticks) when to wake the thread */
+    /* Task 1 non-busy sleep additions */
+    // time (in ticks) when to wake the thread (0 otherwise)
     int64_t wake_ticks;
+    // List element for sleep_list
     struct list_elem sleep_list_elem;
 
     /* Owned by thread.c. */

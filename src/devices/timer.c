@@ -88,13 +88,14 @@ timer_elapsed (int64_t then)
    be turned on.
    Re-implemented for task 1 without a busy wait. */
 void
-timer_sleep (int64_t ticks) 
+timer_sleep (int64_t ticks)
 {
 
   // A call with negative value for ticks should not block.
   if (ticks <= 0)
     return;
 
+  // Set the current thread to sleep and wake up after ticks have elapsed.
   thread_sleep (timer_ticks () + ticks);
 
 }
