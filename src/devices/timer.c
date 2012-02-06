@@ -85,15 +85,18 @@ timer_elapsed (int64_t then)
 }
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
-   be turned on. */
+   be turned on.
+   Re-implemented for task 1 without a busy wait. */
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
 
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  // A call with negative value for ticks should not block.
+  if (ticks <= 0)
+    return;
+
+  thread_sleep (timer_ticks () + ticks);
+
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
