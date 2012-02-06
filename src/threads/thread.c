@@ -245,7 +245,12 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
+
+  // Adds the thread to the end of the list and then re-orders it. 
+  // Possibly use list_insert_ordered()??
   list_push_back (&ready_list, &t->elem);
+  list_sort(&ready_list, compare_priority, NULL);
+
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -344,6 +349,11 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+
+  //Order the ready list.
+  //check if the current thread has the highest priority.
+  //if not, yield to the next thread.
+  //add current thread to the list and order the list.
 }
 
 /* Returns the current thread's priority. */
@@ -590,3 +600,33 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+/* Needed to be done for Task 1 */
+
+/* 1. need to sort the ready list in terms of priority, in descending order.
+   2. when a thread is added to the ready list that has a higher priority than
+      the current thread, the current thread should yield the processor to the 
+      new thread.
+   3. When threads are waiting for a lock, semaphore, etc. the highest priority
+      waiting thread should be awakened first.
+   4. threads can change priority at any time, but if it lowers itself, then it 
+      yields the cpu. */
+
+/* Task 1: Sorts the ready list in terms of priority in descending order, so 
+   the thread with the highest priority is the head of the list. */
+
+/*void
+sort_ready_list(void)
+{
+  list_sort(ready_list, compare_priority, null);
+  return ready_list;
+}*/
+
+/* Return true is the priority of a is greater than the priority of b. False
+   otherwise */
+bool
+compare_priority (struct list_elem *a, struct list_elem *b, void *aux)
+{
+  return list_entry(a, struct thread, elem)->priority 
+       > list_entry(b, struct thread, elem)->priority;
+}
