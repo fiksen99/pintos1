@@ -4,6 +4,7 @@
 #include <random.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
@@ -11,6 +12,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -27,6 +29,9 @@ static struct list ready_list;
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
+
+/* Task 1 */
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -92,12 +97,17 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
+     value to indicate that it is not asleep.*/
+  initial_thread->wake_ticks = 0;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -118,7 +128,8 @@ thread_start (void)
 }
 
 /* Called by the timer interrupt handler at each timer tick.
-   Thus, this function runs in an external interrupt context. */
+   Thus, this function runs in an external interrupt context.
+   N.B. Interrupts are disabled, minimise computation. */
 void
 thread_tick (void) 
 {
@@ -137,6 +148,68 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
+  while(!list_empty (&sleep_list))
+  {
+    /* Find out which thread is next to wake up. */
+    struct thread *next_to_wake = list_entry (list_front (&sleep_list),
+                                              struct thread,
+                                              sleep_list_elem);
+
+    if (timer_ticks () >= next_to_wake->wake_ticks)
+    {
+      list_pop_front (&sleep_list);
+
+      // Reset time when the thread should be woken to n/a
+      next_to_wake->wake_ticks = 0;
+
+      thread_unblock(next_to_wake);
+    }
+    else
+      break;
+  }
+}
+
+/* Task 1 */
+/* Order lexicographically (wake_ticks, priority)
+   what if priority changes while on the list? */
+// return a < b
+static bool
+compare_wake_ticks (const struct list_elem *a,
+                    const struct list_elem *b,
+                    void *aux UNUSED)
+{
+  struct thread *t1 = list_entry (a, struct thread, sleep_list_elem);
+  struct thread *t2 = list_entry (b, struct thread, sleep_list_elem);
+  if(t1->wake_ticks < t2->wake_ticks)
+  {
+    return true;
+  }
+  else if(t1->wake_ticks == t2->wake_ticks)
+  {
+    return t1->priority > t2->priority;
+  }
+  return false;
+}
+
+void
+thread_sleep (int64_t wake_ticks)
+{
+  struct thread *t = thread_current ();
+
+  // Record the time (in ticks) when the thread should wake.
+  t->wake_ticks = wake_ticks;
+
+  list_insert_ordered (&sleep_list, &t->sleep_list_elem,
+                       compare_wake_ticks, NULL);
+
+  enum intr_level old_level = intr_disable ();
+
+  // Block the calling thread.
+  thread_block ();
+
+  intr_set_level (old_level);
+
 }
 
 /* Prints thread statistics. */
@@ -203,6 +276,10 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
+  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
+     value to indicate that it is not asleep.*/
+  t->wake_ticks = 0;
 
   intr_set_level (old_level);
 

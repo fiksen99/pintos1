@@ -98,6 +98,10 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
+    /* Task 1: time (in ticks) when to wake the thread */
+    int64_t wake_ticks;
+    struct list_elem sleep_list_elem;
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
@@ -106,6 +110,9 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+
+/* Task 1 */
+void thread_sleep (int64_t wake_ticks);
 
 void thread_init (void);
 void thread_start (void);
