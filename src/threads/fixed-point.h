@@ -20,8 +20,3 @@ int convertToInt( fixedPoint* );
 void convertToFixedPoint( int, fixedPoint* );
 
 #endif
-
-
-
-
-
