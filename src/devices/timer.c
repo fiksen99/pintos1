@@ -95,18 +95,7 @@ timer_sleep (int64_t ticks)
   if (ticks <= 0)
     return;
 
-  // Record the time (in ticks) when the thread should wake.
-  thread_current ()->wake_ticks = timer_ticks () + ticks;
-
-  // Make sure the cpu can be interrupted to wake up this thread.
-  ASSERT (intr_get_level () == INTR_ON);
-
-  intr_set_level(INTR_OFF);
-
-  // Block the calling thread.
-  thread_block ();
-
-  intr_set_level(INTR_ON);
+  thread_sleep (timer_ticks () + ticks);
 
 }
 
