@@ -695,8 +695,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 /* Task 1: Sorts the ready list in terms of priority in descending order, so 
    the thread with the highest priority is the head of the list. */
 
-
-/* Return true is the priority of a is less than the priority of b. False
+/* Return true if the priority of a is less than the priority of b. False
    otherwise */
 bool
 compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux)
