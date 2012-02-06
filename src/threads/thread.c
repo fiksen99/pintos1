@@ -322,6 +322,7 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread) 
     list_push_back (&ready_list, &cur->elem);
+    list_sort(&ready_list, compare_priority, NULL);      // Sorts the list
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -354,6 +355,12 @@ thread_set_priority (int new_priority)
   //check if the current thread has the highest priority.
   //if not, yield to the next thread.
   //add current thread to the list and order the list.
+
+  list_sort(&ready_list, compare_priority, NULL);
+  if (list_entry(list_head(&ready_list), struct thread, elem)->priority < new_priority)
+    return;
+  else
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -618,14 +625,14 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 /*void
 sort_ready_list(void)
 {
-  list_sort(ready_list, compare_priority, null);
+  list_sort(ready_list, compare_priority, NULL);
   return ready_list;
 }*/
 
 /* Return true is the priority of a is greater than the priority of b. False
    otherwise */
 bool
-compare_priority (struct list_elem *a, struct list_elem *b, void *aux)
+compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux)
 {
   return list_entry(a, struct thread, elem)->priority 
        > list_entry(b, struct thread, elem)->priority;

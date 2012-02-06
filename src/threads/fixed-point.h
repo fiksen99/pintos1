@@ -77,8 +77,3 @@ fixedPoint* convertToFixedPoint( int n ) {
 }
 
 #endif
-
-
-
-
-
