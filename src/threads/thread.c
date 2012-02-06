@@ -610,7 +610,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
 /* Needed to be done for Task 1 */
 
-/* 1. need to sort the ready list in terms of priority, in descending order.
+/* 1. need to sort the ready list in terms of priority, in descending order.            
    2. when a thread is added to the ready list that has a higher priority than
       the current thread, the current thread should yield the processor to the 
       new thread.
@@ -618,6 +618,9 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
       waiting thread should be awakened first.
    4. threads can change priority at any time, but if it lowers itself, then it 
       yields the cpu. */
+
+/* What is done:
+   bullet point 1, 2 and 4. */
 
 /* Task 1: Sorts the ready list in terms of priority in descending order, so 
    the thread with the highest priority is the head of the list. */
