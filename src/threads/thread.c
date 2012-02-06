@@ -325,7 +325,7 @@ thread_unblock (struct thread *t)
 
   // Adds the thread to the end of the list and then re-orders it. 
   // Possibly use list_insert_ordered()??
-  list_push_back (&ready_list, &t->elem);
+  list_push_front (&ready_list, &t->elem);
   list_sort(&ready_list, compare_priority, NULL);
 
   t->status = THREAD_READY;
@@ -398,7 +398,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_push_front (&ready_list, &cur->elem);
     list_sort(&ready_list, compare_priority, NULL);      // Sorts the list
   cur->status = THREAD_READY;
   schedule ();
@@ -709,11 +709,11 @@ sort_ready_list(void)
   return ready_list;
 }*/
 
-/* Return true is the priority of a is greater than the priority of b. False
+/* Return true is the priority of a is less than the priority of b. False
    otherwise */
 bool
 compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux)
 {
   return list_entry(a, struct thread, elem)->priority 
-       > list_entry(b, struct thread, elem)->priority;
+         < list_entry(b, struct thread, elem)->priority;
 }
