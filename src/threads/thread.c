@@ -344,14 +344,6 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
-  
-  /*checks if the current thread has the highest priority after the
-    priority change. If true, then nothing happens. Otherwise, the
-    thread yields.*/
-  if(!is_current_highest_priority()){
-    add_thread_to_ready_list();    
-    thread_yield();    
-  }
 }
 
 /* Returns the current thread's priority. */
@@ -598,30 +590,3 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
-
-/* Methods added by us */
-
-// Returns true if the current thread has the highest priority
-bool 
-is_current_highest_priority(void)
-{
-  int current_thread_priority = thread_get_priority();
-  struct thread *next_thread = next_thread_to_run();
-  int next_thread_priority = next_thread->priority;
-  if(current_thread_priority <= next_thread_priority){
-    return false;
-  }
-  return true; 
-}
-
-// Returns the priority of the head of the thread on the ready list
-struct thread * 
-priority_of_next_thread(){
-  return next_thread_to_run()->priority;
-}
-
-//Adds current thread to ready list.
-void
-add_thread_to_ready_list(void){
-  //Write this code.
-}
