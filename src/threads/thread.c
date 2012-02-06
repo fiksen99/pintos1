@@ -323,10 +323,7 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
 
-  // Adds the thread to the end of the list and then re-orders it. 
-  // Possibly use list_insert_ordered()??
-  list_push_front (&ready_list, &t->elem);
-  list_sort(&ready_list, compare_priority, NULL);
+  list_insert_ordered (&ready_list, &t->elem, compare_priority, NULL);
 
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -397,9 +394,8 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_front (&ready_list, &cur->elem);
-    list_sort(&ready_list, compare_priority, NULL);      // Sorts the list
+  if (cur != idle_thread)
+    list_insert_ordered (&ready_list, &cur->elem, compare_priority, NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -433,10 +429,7 @@ thread_set_priority (int new_priority)
   //if not, yield to the next thread.
   //add current thread to the list and order the list.
 
-  list_sort(&ready_list, compare_priority, NULL);
-  if (list_entry(list_head(&ready_list), struct thread, elem)->priority < new_priority)
-    return;
-  else
+  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority >= new_priority)
     thread_yield();
 }
 
@@ -702,12 +695,6 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 /* Task 1: Sorts the ready list in terms of priority in descending order, so 
    the thread with the highest priority is the head of the list. */
 
-/*void
-sort_ready_list(void)
-{
-  list_sort(ready_list, compare_priority, NULL);
-  return ready_list;
-}*/
 
 /* Return true is the priority of a is less than the priority of b. False
    otherwise */
