@@ -1,51 +1,67 @@
-#include "fixed-point.h"
+#include "threads/fixed-point.h"
+#include <stdint.h>
 
-fixedPoint* add( fixedPoint* x, int n ) {
-	new fixedPoint result = { .value = x->value + n * FRACTION_SIZE };
-	return &result;
+//result is stored in first fixedPoint parameter
+
+void 
+add_int (fixedPoint* x, int n)
+{
+	x->value += n * FRACTION_SIZE;
 }
 
-fixedPoint* add( fixedPoint* x, fixedPoint* y ) {
-	new fixedPoint result = { .value = x->value + y->value };
-	return &result;
+void
+add_fixed_point (fixedPoint* x, fixedPoint* y) 
+{
+	x->value += y->value;
 }
 
-fixedPoint* subtract( fixedPoint* x, int n ) {
-	new fixedPoint result = { .value = x->value - n * FRACTION_SIZE };
-	return &result;
+void
+subtract_int (fixedPoint* x, int n) 
+{
+	x->value -= n * FRACTION_SIZE;
 }
 
-fixedPoint* subtract( fixedPoint* x, fixedPoint* y ) {
-	new fixedPoint result = { .value = x->value - y->value };
-	return &result;
+void
+subtract_fixed_point (fixedPoint* x, fixedPoint* y) 
+{
+	x->value -= y->value;
 }
 
-fixedPoint* multiply( fixedPoint* x, int n ) {
-	new fixedPoint result = { .value = x->value * n };
-	return &result;
+void 
+multiply_int (fixedPoint* x, int n) 
+{
+	x->value *= n;
 }
 
-fixedPoint* multiply( fixedPoint* x, fixedPoint* y ) {
-	new fixedPoint result = { .value = ( ( int64_t ) x->value ) * y->value / FRACTION_SIZE };
-	return &result;
+void
+multiply_fixed_point (fixedPoint* x, fixedPoint* y) 
+{
+	x->value = ( ( int64_t ) x->value ) * y->value / FRACTION_SIZE;
 }
 
-fixedPoint* divide( fixedPoint* x, int n ) {
-	new fixedPoint result = { .value = x->value / n };
-	return &result;
+void
+divide_int (fixedPoint* x, int n) 
+{
+	x->value /= n;
 }
 
-fixedPoint* divide( fixedPoint* x, fixedPoint* y ) {
-	new fixedPoint result = { .value = ( ( int64_t ) x->value ) * FRACTION_SIZE / y->value };
-	return &result;
+void
+divide_fixed_point (fixedPoint* x, fixedPoint* y) 
+{
+	x->value = ( ( int64_t ) x->value ) * FRACTION_SIZE / y->value;
 }
 
-int convertToInt( fixedPoint* x ) {
+int
+convertToInt (fixedPoint* x) 
+{
 #ifdef ROUND_TO_NEAREST
 	int result = x->value;
-	if( result >= 0 ) {
+	if( result >= 0 ) 
+	{
 		return result + FRACTION_SIZE / 2;
-	} else {
+	}
+	else 
+	{
 		return result - FRACTION_SIZE / 2;
 	}
 #else
@@ -53,7 +69,8 @@ int convertToInt( fixedPoint* x ) {
 #endif
 }
 
-fixedPoint* convertToFixedPoint( int n ) {
-	new fixedPoint result = { .value = n * FRACTION_SIZE };
-	return &result;
+//requires an integer to convert and a pointer to a struct to put the value in
+void convertToFixedPoint( int n, fixedPoint* x )
+{
+	x->value = n * FRACTION_SIZE;
 }
