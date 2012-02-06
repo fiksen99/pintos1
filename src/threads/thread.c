@@ -440,8 +440,8 @@ thread_set_priority (int new_priority)
   //if not, yield to the next thread.
   //add current thread to the list and order the list.
 
-  list_sort(&ready_list, compare_priority, NULL);
-  if (list_entry(list_head(&ready_list), struct thread, elem)->priority < new_priority)
+  list_sort (&ready_list, compare_priority, NULL);
+  if (list_entry (list_head (&ready_list), struct thread, elem)->priority < new_priority)
     return;
   else
     thread_yield();
@@ -722,5 +722,5 @@ bool
 compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux)
 {
   return list_entry(a, struct thread, elem)->priority 
-       > list_entry(b, struct thread, elem)->priority;
+         > list_entry(b, struct thread, elem)->priority;
 }
