@@ -323,12 +323,17 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   t->status = THREAD_READY; 
-  int current_priority = thread_current ()->priority;
   list_insert_ordered (&ready_list, &t->elem, compare_priority, NULL);
-  if (t->priority > current_priority)
-    thread_yield(); 
-
+  t->status = THREAD_READY;
   intr_set_level (old_level);
+  if (t->priority > thread_current ()->priority){
+    if (thread_current () != idle_thread){
+      if (intr_context ())
+        intr_yield_on_return ();
+      else
+        thread_yield ();
+    }
+  }
 }
 
 /* Returns the name of the running thread. */
