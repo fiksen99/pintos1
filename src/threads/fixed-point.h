@@ -6,7 +6,7 @@ typedef struct
 	int value;
 } fixedPoint; 
 
-#define FRACTION_SIZE 2^14 //using 17.14 number format. i.e. f = 2^14
+#define FRACTION_SIZE (1<<14) //using 17.14 number format. i.e. f = 2^14
 
 void add_int( fixedPoint*, int );
 void add_fixed_point( fixedPoint*, fixedPoint* );
