@@ -101,6 +101,8 @@ struct thread
     /* Task 1: time (in ticks) when to wake the thread */
     int64_t wake_ticks;
     struct list_elem sleep_list_elem;
+    int nice;                           /* Thread's niceness */
+    //struct fixed_point recent_cpu;      /* CPU time the thread has used */
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
@@ -146,6 +148,6 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 /* Methods added by us for Task 1 */
-bool compare_priority (const struct list_elem *, const struct list_elem *, void *aux);
+bool compare_priority_less (const struct list_elem *, const struct list_elem *, void *aux);
 
 #endif /* threads/thread.h */

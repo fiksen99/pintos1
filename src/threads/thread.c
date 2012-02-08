@@ -6,6 +6,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "threads/flags.h"
+#include "threads/fixed-point.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
 #include "threads/palloc.h"
@@ -108,6 +109,9 @@ thread_init (void)
   /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
      value to indicate that it is not asleep.*/
   initial_thread->wake_ticks = 0;
+
+  /* Set the inital niceness value of thread to 0 */
+  initial_thread->nice = 0;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -280,6 +284,12 @@ thread_create (const char *name, int priority,
   /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
      value to indicate that it is not asleep.*/
   t->wake_ticks = 0;
+  
+
+  //CHECK THIS CODE
+  /* Set the niceness of the the new thread to 0 */
+  t->nice = 0;
+  //READ PAGE 74
 
   intr_set_level (old_level);
 
@@ -322,11 +332,19 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-
-  list_insert_ordered (&ready_list, &t->elem, compare_priority, NULL);
-
+  t->status = THREAD_READY; 
+  list_insert_ordered (&ready_list, &t->elem, compare_priority_less, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+  if (t->priority > thread_current ()->priority || thread_current () != idle_thread)
+    if (intr_context ())
+    {
+      intr_yield_on_return ();
+    }
+    else
+    {
+      thread_yield ();
+    }
 }
 
 /* Returns the name of the running thread. */
@@ -395,7 +413,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    list_insert_ordered (&ready_list, &cur->elem, compare_priority, NULL);
+    list_insert_ordered (&ready_list, &cur->elem, compare_priority_less, NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -429,8 +447,8 @@ thread_set_priority (int new_priority)
   //if not, yield to the next thread.
   //add current thread to the list and order the list.
 
-  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority >= new_priority)
-  thread_yield();
+  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority > new_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -442,17 +460,20 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) 
+thread_set_nice (int new_nice UNUSED) 
 {
-  /* Not yet implemented. */
+  /*thread_current ()->nice = new_nice;
+  
+
+  thread_set_priority(new_priority);*/
+  
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return thread_current ()->nice;
 }
 
 /* Returns 100 times the system load average. */
@@ -698,7 +719,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 /* Return true if the priority of a is less than the priority of b. False
    otherwise */
 bool
-compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux)
+compare_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux)
 {
   return list_entry(a, struct thread, elem)->priority 
          < list_entry(b, struct thread, elem)->priority;
