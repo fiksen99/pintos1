@@ -336,15 +336,12 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem, compare_priority_less, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  if (t->priority > thread_current ()->priority || thread_current () != idle_thread)
+  if (t->priority > thread_current ()->priority && thread_current () != idle_thread){
     if (intr_context ())
-    {
       intr_yield_on_return ();
-    }
     else
-    {
       thread_yield ();
-    }
+  }
 }
 
 /* Returns the name of the running thread. */
@@ -441,11 +438,6 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
-
-  //Order the ready list.
-  //check if the current thread has the highest priority.
-  //if not, yield to the next thread.
-  //add current thread to the list and order the list.
 
   if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority > new_priority)
     thread_yield();
@@ -719,7 +711,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 /* Return true if the priority of a is less than the priority of b. False
    otherwise */
 bool
-compare_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux)
+compare_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
   return list_entry(a, struct thread, elem)->priority 
          < list_entry(b, struct thread, elem)->priority;
