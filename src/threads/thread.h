@@ -105,6 +105,10 @@ struct thread
     struct list_elem donor_elem;
     int overwritten_priority;
 
+    int nice;
+
+    struct list_elem sleep_list_elem;
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
@@ -149,6 +153,6 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 /* Methods added by us for Task 1 */
-bool compare_priority (const struct list_elem *, const struct list_elem *, void *aux);
+bool compare_priority_less (const struct list_elem *, const struct list_elem *, void *aux);
 
 #endif /* threads/thread.h */
