@@ -155,7 +155,7 @@ thread_tick (void)
     /* Find out which thread is next to wake up. */
     struct thread *next_to_wake = list_entry (list_front (&sleep_list),
                                               struct thread,
-                                              sleep_list_elem);
+                                              elem);
 
     if (timer_ticks () >= next_to_wake->wake_ticks)
     {
@@ -181,8 +181,8 @@ compare_wake_ticks (const struct list_elem *a,
                     const struct list_elem *b,
                     void *aux UNUSED)
 {
-  struct thread *t1 = list_entry (a, struct thread, sleep_list_elem);
-  struct thread *t2 = list_entry (b, struct thread, sleep_list_elem);
+  struct thread *t1 = list_entry (a, struct thread, elem);
+  struct thread *t2 = list_entry (b, struct thread, elem);
   if(t1->wake_ticks < t2->wake_ticks)
   {
     return true;
@@ -206,7 +206,7 @@ thread_sleep (int64_t wake_ticks)
 
   // Add to the list of sleeping threads, threads which will wake soonest should
   // be at the front of the list.
-  list_insert_ordered (&sleep_list, &t->sleep_list_elem,
+  list_insert_ordered (&sleep_list, &t->elem,
                        compare_wake_ticks, NULL);
 
   // Interrupts must be disabled to block a thread.
@@ -453,6 +453,18 @@ thread_get_priority (void)
 {
   return thread_current ()->priority;
 }
+
+/*
+int
+get_priority (struct thread *t)
+{
+  if (t->priority_donated != -1)
+  {
+    return t->priority_donated;
+  }
+  return t->priority;
+}
+*/
 
 /* Sets the current thread's nice value to NICE. */
 void
