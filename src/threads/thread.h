@@ -101,6 +101,8 @@ struct thread
     /* Task 1: time (in ticks) when to wake the thread */
     int64_t wake_ticks;
     struct list_elem sleep_list_elem;
+    int nice;                           /* Thread's niceness */
+    //struct fixed_point recent_cpu;      /* CPU time the thread has used */
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
