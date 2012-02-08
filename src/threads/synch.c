@@ -197,14 +197,12 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
-  struct thread *holder = lock->holder;
-  if (holder != NULL && holder->priority < thread_current ()->priority)
+  while (lock->holder != NULL && lock->holder->priority < thread_current ()->priority)
   {
-    int holder_old_priority = holder->priority;
-    holder->priority = thread_current ()->priority;
-    
+    thread_current ()->overwritten_priority = lock->holder->priority;
+    lock->holder->priority = thread_current ()->priority;
+    list_push_front (&lock->donors, &thread_current ()->donor_elem);
     thread_block ();
-    holder->priority = holder_old_priority;
   }
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
@@ -240,6 +238,15 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
+
+  // loop backwards through lock->donors, restore priority from & unblock each
+  while (!list_empty (&lock->donors))
+  {
+    struct thread *donor = list_entry (list_pop_front (&lock->donors),
+                                       struct thread, donor_elem);
+    thread_current ()->priority = donor->overwritten_priority;
+    thread_unblock (donor);
+  }
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
