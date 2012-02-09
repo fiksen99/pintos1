@@ -102,9 +102,6 @@ struct thread
     // time (in ticks) when to wake the thread (0 otherwise)
     int64_t wake_ticks;
 
-    struct list_elem donor_elem;
-    int overwritten_priority;
-
     int nice;
 
     struct list_elem sleep_list_elem;

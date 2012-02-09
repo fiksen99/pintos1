@@ -290,8 +290,7 @@ thread_create (const char *name, int priority,
 
   /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
      value to indicate that it is not asleep.*/
-  t->wake_ticks = 0;
-  
+  t->wake_ticks = 0;  
 
   //CHECK THIS CODE
   /* Set the niceness of the the new thread to 0 */
