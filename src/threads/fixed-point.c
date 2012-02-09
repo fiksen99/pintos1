@@ -54,7 +54,9 @@ divide_fixed_point (fixed_point* x, fixed_point* y)
 int
 convert_to_int (fixed_point* x) 
 {
-#ifdef ROUND_TO_NEAREST
+#ifdef ROUND_TO_ZERO
+	return x->value / FRACTION_SIZE;
+#else
 	int result = x->value;
 	if( result >= 0 ) 
 	{
@@ -64,8 +66,6 @@ convert_to_int (fixed_point* x)
 	{
 		return result - FRACTION_SIZE / 2;
 	}
-#else
-	return x->value / FRACTION_SIZE;
 #endif
 }
 
