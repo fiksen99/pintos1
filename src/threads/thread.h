@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/fixed-point.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -102,7 +103,7 @@ struct thread
     int64_t wake_ticks;
     struct list_elem sleep_list_elem;
     int nice;                           /* Thread's niceness */
-    //struct fixed_point recent_cpu;      /* CPU time the thread has used */
+    int recent_cpu;      /* CPU time the thread has used */
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

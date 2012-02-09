@@ -52,7 +52,7 @@ divide_fixed_point (fixedPoint* x, fixedPoint* y)
 }
 
 int
-convertToInt (fixedPoint* x) 
+convert_to_int (fixedPoint* x) 
 {
 #ifdef ROUND_TO_NEAREST
 	int result = x->value;
@@ -70,7 +70,7 @@ convertToInt (fixedPoint* x)
 }
 
 //requires an integer to convert and a pointer to a struct to put the value in
-void convertToFixedPoint( int n, fixedPoint* x )
+int convert_to_fixedPoint( int n )
 {
-	x->value = n * FRACTION_SIZE;
+	return n * FRACTION_SIZE;
 }

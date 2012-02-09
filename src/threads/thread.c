@@ -77,6 +77,8 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+static int load_avg; 			/* current system load average */
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -436,11 +438,40 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+/* __________________calculations ___________________
+
+priority:
+  
+
+recent cpu:
+  fixedPoint old_load_avg = { convert_to_fixedPoint (59) };
+  fixedPoint ready_threads = { convert_to_fixedPoint (1) };
+  divide_int (&old_load_avg, 60);
+  multiply_int (&old_load_avg, load_avg); list_size( &ready_list );
+  divide_int (&ready_threads, 60);
+  multiply_int (&ready_threads, list_size (&ready_list));
+  add_fixed_point (&old_load_avg, &ready_threads);
+  load_avg = convert_to_int (old_load_avg.value); 
+
+load average:
+  fixedPoint old_cpu = { convert_to_fixedPoint (load_avg) };
+  fixedPoint denominator = { convert_to_fixedPoint (load_avg) };
+  multiply_int (&old_cpu, 2);
+  multiply_int (&denominator, 2);
+  add_int (&denominator, 1);
+  divide_fixed_point (&old_cpu, &denominator);
+  struct thread *current = thread_current();
+  multiply_int (&old_cpu, current->recent_cpu);
+  add_int (&old_cpu, current->nice);
+  current->recent_cpu = convert_to_int (&old_cpu);
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+
+
 
   //Order the ready list.
   //check if the current thread has the highest priority.
@@ -460,12 +491,25 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int new_nice UNUSED) 
+thread_set_nice (int new_nice) 
 {
-  /*thread_current ()->nice = new_nice;
-  
+  thread_current ()->nice = new_nice;
 
-  thread_set_priority(new_priority);*/
+  fixedPoint recent_cpu = { convert_to_fixedPoint (thread_get_recent_cpu()) };
+  int load_avg = thread_get_load_avg();
+  divide_int( &recent_cpu, 4 );
+  int new_priority = PRI_MAX - convert_to_int (&recent_cpu) - new_nice * 2;
+
+
+
+  if (new_priority < PRI_MIN )
+    new_priority = PRI_MIN;
+  else if (new_priority > PRI_MAX ) 
+    new_priority = PRI_MAX;
+  //recalculate current threads priority
+  //yields if no longer highst priority
+
+  thread_set_priority(new_priority);
   
 }
 
@@ -480,16 +524,14 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return 100*load_avg;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return 100*(current->recent_cpu);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

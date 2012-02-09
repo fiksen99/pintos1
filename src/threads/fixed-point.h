@@ -16,7 +16,7 @@ void multiply_int( fixedPoint*, int );
 void multiply_fixed_point( fixedPoint*, fixedPoint* );
 void divide_int( fixedPoint*, int );
 void divide_fixed_point( fixedPoint*, fixedPoint* );
-int convertToInt( fixedPoint* );
-void convertToFixedPoint( int, fixedPoint* );
+int convert_to_int( fixedPoint* );
+int convert_to_fixedPoint( int );
 
 #endif
