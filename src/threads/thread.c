@@ -441,8 +441,8 @@ priority:
   
 
 recent cpu:
-  fixedPoint old_load_avg = { convert_to_fixedPoint (59) };
-  fixedPoint ready_threads = { convert_to_fixedPoint (1) };
+  fixed_point old_load_avg = { convert_to_fixed_point (59) };
+  fixed_point ready_threads = { convert_to_fixed_point (1) };
   divide_int (&old_load_avg, 60);
   multiply_int (&old_load_avg, load_avg); list_size( &ready_list );
   divide_int (&ready_threads, 60);
@@ -451,8 +451,8 @@ recent cpu:
   load_avg = convert_to_int (old_load_avg.value); 
 
 load average:
-  fixedPoint old_cpu = { convert_to_fixedPoint (load_avg) };
-  fixedPoint denominator = { convert_to_fixedPoint (load_avg) };
+  fixed_point old_cpu = { convert_to_fixed_point (load_avg) };
+  fixed_point denominator = { convert_to_fixed_point (load_avg) };
   multiply_int (&old_cpu, 2);
   multiply_int (&denominator, 2);
   add_int (&denominator, 1);
@@ -490,7 +490,7 @@ thread_set_nice (int new_nice)
 {
   thread_current ()->nice = new_nice;
 
-  fixedPoint recent_cpu = { convert_to_fixedPoint (thread_get_recent_cpu()) };
+  fixed_point recent_cpu = { convert_to_fixed_point (thread_get_recent_cpu()) };
   int load_avg = thread_get_load_avg();
   divide_int( &recent_cpu, 4 );
   int new_priority = PRI_MAX - convert_to_int (&recent_cpu) - new_nice * 2;
