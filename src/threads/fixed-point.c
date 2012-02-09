@@ -69,7 +69,7 @@ convert_to_int (fixedPoint* x)
 #endif
 }
 
-//requires an integer to convert and a pointer to a struct to put the value in
+
 int convert_to_fixedPoint( int n )
 {
 	return n * FRACTION_SIZE;
