@@ -102,6 +102,9 @@ struct thread
     // time (in ticks) when to wake the thread (0 otherwise)
     int64_t wake_ticks;
 
+    struct thread *donee;
+    struct list_elem donator_elem;
+
     int nice;
 
     struct list_elem sleep_list_elem;

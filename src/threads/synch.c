@@ -179,7 +179,9 @@ lock_init (struct lock *lock)
 
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
+
   lock->old_priority = -1;
+  list_init (&lock->donators);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -197,14 +199,37 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  struct thread *donee = lock->holder;
+  int new_priority = thread_current ()->priority;
+  if (donee != NULL && donee->priority < new_priority)
+  {
+    thread_current ()->donee = donee;
+    list_push_back (&lock->donators, &thread_current ()->donator_elem);
+    if (lock->old_priority == -1)
+    {
+      lock->old_priority = donee->priority;
+    }
+    while (donee != NULL)
+    {
+      donee->priority = new_priority;
+      donee = donee->donee;
+    }
+  }
+/*
   if (lock->holder != NULL && lock->holder->priority < thread_current ()->priority)
   {
     if (lock->old_priority == -1)
     {
       lock->old_priority = lock->holder->priority;
     }
+    thread_current ()->donee = lock->holder;
     lock->holder->priority = thread_current ()->priority;
+    if (lock->holder->donee != NULL)
+    {
+      
+    }
   }
+*/
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -243,6 +268,12 @@ lock_release (struct lock *lock)
   // restore old_priority if not -1
   if (lock->old_priority != -1)
   {
+    while (!list_empty (&lock->donators))
+    {
+      struct thread *d = list_entry (list_pop_front (&lock->donators),
+                                     struct thread, donator_elem);
+      d->donee = NULL;
+    }
     thread_current ()->priority = lock->old_priority;
     lock->old_priority = -1;
   }
