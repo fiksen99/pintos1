@@ -343,16 +343,12 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem, compare_priority_less, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  if (t->priority > thread_current ()->priority || thread_current () != idle_thread)
+  if (t->priority > thread_current ()->priority && thread_current () != idle_thread)
   {
     if (intr_context ())
-    {
       intr_yield_on_return ();
-    }
     else
-    {
       thread_yield ();
-    }
   }
 }
 
@@ -450,11 +446,6 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
-
-  //Order the ready list.
-  //check if the current thread has the highest priority.
-  //if not, yield to the next thread.
-  //add current thread to the list and order the list.
 
   if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority > new_priority)
     thread_yield();
