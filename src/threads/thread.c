@@ -287,11 +287,12 @@ thread_create (const char *name, int priority,
      value to indicate that it is not asleep.*/
   t->wake_ticks = 0;
   
-
-  //CHECK THIS CODE
-  /* Set the niceness of the the new thread to 0 */
-  t->nice = 0;
-  //READ PAGE 74
+  struct thread *curr = thread_current();
+  if (curr != NULL ) {
+    t->nice = curr->nice;
+  }
+  else
+    t->nice = 0;
 
   intr_set_level (old_level);
 
