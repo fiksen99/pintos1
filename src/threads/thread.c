@@ -31,7 +31,7 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
-/* Task 1 */
+/* List of sleeping threads. */
 static struct list sleep_list;
 
 /* Idle thread. */
@@ -105,10 +105,6 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-
-  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
-     value to indicate that it is not asleep.*/
-  initial_thread->wake_ticks = 0;
 
   /* Set the inital niceness value of thread to 0 */
   initial_thread->nice = 0;
@@ -287,10 +283,6 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
-  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
-     value to indicate that it is not asleep.*/
-  t->wake_ticks = 0;  
 
   //CHECK THIS CODE
   /* Set the niceness of the the new thread to 0 */
@@ -579,6 +571,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
+  /* Initialise time (in ticks) when to wake the thread with sentinel value to
+     indicate that it is not asleep.*/
+  t->wake_ticks = 0;  
+
+  /* This thread has currently not donated its priority to any other thread */
   t->donee = NULL;
 
   old_level = intr_disable ();

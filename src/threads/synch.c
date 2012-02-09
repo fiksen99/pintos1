@@ -201,6 +201,7 @@ lock_acquire (struct lock *lock)
 
   struct thread *donee = lock->holder;
   int new_priority = thread_current ()->priority;
+  /* See if priority donation is applicable */
   if (donee != NULL && donee->priority < new_priority)
   {
     thread_current ()->donee = donee;
@@ -209,27 +210,14 @@ lock_acquire (struct lock *lock)
     {
       lock->old_priority = donee->priority;
     }
+    /* Recursively give each thread the new (higher) priority */
     while (donee != NULL)
     {
       donee->priority = new_priority;
       donee = donee->donee;
     }
   }
-/*
-  if (lock->holder != NULL && lock->holder->priority < thread_current ()->priority)
-  {
-    if (lock->old_priority == -1)
-    {
-      lock->old_priority = lock->holder->priority;
-    }
-    thread_current ()->donee = lock->holder;
-    lock->holder->priority = thread_current ()->priority;
-    if (lock->holder->donee != NULL)
-    {
-      
-    }
-  }
-*/
+
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -265,7 +253,7 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
-  // restore old_priority if not -1
+  /* Restore old priority and remove donators if necessary */
   if (lock->old_priority != -1)
   {
     while (!list_empty (&lock->donators))
