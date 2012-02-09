@@ -722,5 +722,5 @@ bool
 compare_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
   return list_entry(a, struct thread, elem)->priority 
-         < list_entry(b, struct thread, elem)->priority;
+         <= list_entry(b, struct thread, elem)->priority;
 }
