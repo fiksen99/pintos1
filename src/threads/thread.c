@@ -118,7 +118,7 @@ thread_init (void)
   if (thread_mlfqs) {
     /* Set the inital niceness value of thread to 0 */
     initial_thread->nice = 0;
-    initial_thread->cpu = 0;
+    initial_thread->recent_cpu = 0;
     load_avg = 0;
   }
 
@@ -156,10 +156,10 @@ thread_tick (void)
   else if (t->pagedir != NULL)
     user_ticks++;
 #endif
-  //increment recent_cpu on running thread
   else
   {
-	if (thread_mlfqs)
+	  if (thread_mlfqs)
+      //increment recent_cpu on running thread
       t->recent_cpu++;
     kernel_ticks++;
   }
@@ -320,6 +320,12 @@ thread_create (const char *name, int priority,
   /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
      value to indicate that it is not asleep.*/
   t->wake_ticks = 0;
+
+  if (thread_mlfqs) {
+    /* Set the inital niceness value of thread to 0 */
+    t->nice = 0;
+    t->recent_cpu = 0;
+  }
   
   struct thread *curr = thread_current();
   if (curr != NULL ) {
@@ -469,14 +475,6 @@ thread_foreach (thread_action_func *func, void *aux)
       func (t, aux);
     }
 }
-
-/* __________________calculations ___________________
-
-priority:
-  
-
-load avg:
-load average:
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
@@ -810,7 +808,7 @@ update_load_avg (void)
   fixed_point ready_threads = { convert_to_fixed_point (1) };
   divide_int (&coefficient, 60);
   fixed_point old_load_avg = { load_avg };
-  multiply_int (&old_load_avg, &coefficient);
+  multiply_fixed_point (&old_load_avg, &coefficient);
   divide_int (&ready_threads, 60);
   multiply_int (&ready_threads, list_size (&ready_list));
   add_fixed_point (&old_load_avg, &ready_threads);
