@@ -170,6 +170,7 @@ thread_tick (void)
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
+<<<<<<< HEAD
   if (thread_mlfqs)
   {
     bool hundred_ticks = timer_ticks() % TIMER_FREQ == 0;
@@ -196,12 +197,15 @@ thread_tick (void)
         intr_yield_on_return();
   }
 
+=======
+  // Check the list of sleeping threads to see if any are ready to wake up.
+>>>>>>> ba30263bace3487d51d7a8a99af6a2f14986c56d
   while(!list_empty (&sleep_list))
   {
     /* Find out which thread is next to wake up. */
     struct thread *next_to_wake = list_entry (list_front (&sleep_list),
                                               struct thread,
-                                              sleep_list_elem);
+                                              elem);
 
     if (timer_ticks () >= next_to_wake->wake_ticks)
     {
@@ -213,32 +217,35 @@ thread_tick (void)
       thread_unblock(next_to_wake);
     }
     else
+    {
       break;
+    }
   }
 }
 
-/* Task 1 */
-/* Order lexicographically (wake_ticks, priority)
-   what if priority changes while on the list? */
-// return a < b
+/* Used to order list of sleeping threads,
+   order lexicographically by (wake_ticks increasing, priority decreasing)
+   returns true if a comes before b */
 static bool
 compare_wake_ticks (const struct list_elem *a,
                     const struct list_elem *b,
                     void *aux UNUSED)
 {
-  struct thread *t1 = list_entry (a, struct thread, sleep_list_elem);
-  struct thread *t2 = list_entry (b, struct thread, sleep_list_elem);
+  struct thread *t1 = list_entry (a, struct thread, elem);
+  struct thread *t2 = list_entry (b, struct thread, elem);
   if(t1->wake_ticks < t2->wake_ticks)
   {
     return true;
   }
   else if(t1->wake_ticks == t2->wake_ticks)
   {
+    // What if priority changes while on the list?
     return t1->priority > t2->priority;
   }
   return false;
 }
 
+/* Sets the current thread to sleep until timer_ticks() >= wake_ticks */
 void
 thread_sleep (int64_t wake_ticks)
 {
@@ -247,9 +254,12 @@ thread_sleep (int64_t wake_ticks)
   // Record the time (in ticks) when the thread should wake.
   t->wake_ticks = wake_ticks;
 
-  list_insert_ordered (&sleep_list, &t->sleep_list_elem,
+  // Add to the list of sleeping threads, threads which will wake soonest should
+  // be at the front of the list.
+  list_insert_ordered (&sleep_list, &t->elem,
                        compare_wake_ticks, NULL);
 
+  // Interrupts must be disabled to block a thread.
   enum intr_level old_level = intr_disable ();
 
   // Block the calling thread.
@@ -387,7 +397,8 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem, compare_priority_less, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  if (t->priority > thread_current ()->priority && thread_current () != idle_thread){
+  if (t->priority > thread_current ()->priority && thread_current () != idle_thread)
+  {
     if (intr_context ())
       intr_yield_on_return ();
     else

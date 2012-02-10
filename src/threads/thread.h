@@ -99,11 +99,19 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    /* Task 1: time (in ticks) when to wake the thread */
+    /* Task 1 non-busy sleep addition */
+    // time (in ticks) when to wake the thread (0 otherwise)
     int64_t wake_ticks;
+
+    struct list_elem donor_elem;
+    int overwritten_priority;
+
+    int nice;
+
     struct list_elem sleep_list_elem;
     int nice;                           /* Thread's niceness */
     int recent_cpu;      /* CPU time the thread has used */
+
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
