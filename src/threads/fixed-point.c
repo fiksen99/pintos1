@@ -60,11 +60,11 @@ convert_to_int (fixed_point* x)
 	int result = x->value;
 	if( result >= 0 ) 
 	{
-		return result + FRACTION_SIZE / 2;
+		return (result + FRACTION_SIZE / 2) / FRACTION_SIZE;
 	}
 	else 
 	{
-		return result - FRACTION_SIZE / 2;
+		return (result - FRACTION_SIZE / 2) / FRACTION_SIZE;
 	}
 #endif
 }
