@@ -190,7 +190,7 @@ thread_tick (void)
     }
 	  if (updated_priority)
       //if priorities have been altered, resort the ready list queue
-        intr_yield_on_return();
+        list_sort (&ready_list, compare_priority_less, NULL);
   }
 
   // Check the list of sleeping threads to see if any are ready to wake up.
