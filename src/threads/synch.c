@@ -179,9 +179,6 @@ lock_init (struct lock *lock)
 
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
-
-  lock->old_priority = -1;
-  list_init (&lock->donators);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -207,14 +204,19 @@ lock_acquire (struct lock *lock)
     if (donee != NULL && donee->priority < new_priority)
     {
       thread_current ()->donee = donee;
-      list_push_back (&lock->donators, &thread_current ()->donator_elem);
-      if (lock->old_priority == -1)
+      thread_current ()->donated_lock = lock;
+      list_push_back (&donee->donators, &thread_current ()->donator_elem);
+      if (donee->old_priority == -1)
       {
-        lock->old_priority = donee->priority;
+        donee->old_priority = donee->priority;
       }
       /* Recursively give each thread the new (higher) priority */
       while (donee != NULL)
       {
+        if (donee->priority >= new_priority)
+        {
+          break;
+        }
         donee->priority = new_priority;
         donee = donee->donee;
       }
@@ -258,17 +260,42 @@ lock_release (struct lock *lock)
 
   if (!thread_mlfqs)
   {
-    /* Restore old priority and remove donators if necessary */
-    if (lock->old_priority != -1)
+    /* Remove all donators for this lock, choose the highest priority from
+       remaining donators or old_priority */
+    struct thread *holder = thread_current ();
+    struct list *donators = &holder->donators;
+    if (holder->old_priority != -1)
     {
-      while (!list_empty (&lock->donators))
+      int highest_priority = -1;
+      /* Restore old priority and remove donators if necessary */
+      struct list_elem *e;
+      for (e = list_begin (donators);
+           e != list_end (donators);
+           e = list_next (e))
       {
-        struct thread *d = list_entry (list_pop_front (&lock->donators),
-                                       struct thread, donator_elem);
-        d->donee = NULL;
+        struct thread *d = list_entry (e, struct thread, donator_elem);
+        if (d->donated_lock == lock)
+        {
+          d->donee = NULL;
+          d->donated_lock = NULL;
+          list_remove (&d->donator_elem);
+        } else {
+          if (d->priority > highest_priority)
+          {
+            highest_priority = d->priority;
+          }
+        }
       }
-      thread_current ()->priority = lock->old_priority;
-      lock->old_priority = -1;
+      if (highest_priority == -1)
+      {
+        /* donators is empty */
+        holder->priority = holder->old_priority;
+        holder->old_priority = -1;
+      }
+      else
+      {
+        holder->priority = highest_priority;
+      }
     }
   }
 

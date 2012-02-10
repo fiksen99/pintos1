@@ -436,9 +436,31 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  struct thread *t = thread_current ();
 
-  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority > new_priority)
+  if (t->old_priority == -1)
+  {
+    /* Thread has no donators, simple change its priority */
+    t->priority = new_priority;
+  }
+  else
+  {
+    /* Thread has donator(s), update backup priority */
+    t->old_priority = new_priority;
+    /* Now choose highest available priority */
+    if (t->old_priority > t->priority)
+    {
+      t->priority = t->old_priority;
+    }
+  }
+
+  if (list_empty (&ready_list))
+  {
+    return;
+  }
+  struct thread *highest_ready = list_entry (list_back (&ready_list),
+                                             struct thread, elem);
+  if (highest_ready->priority > t->priority)
     thread_yield();
 }
 
@@ -572,11 +594,19 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   /* Initialise time (in ticks) when to wake the thread with sentinel value to
-     indicate that it is not asleep.*/
+     indicate that it is not asleep */
   t->wake_ticks = 0;  
 
   /* This thread has currently not donated its priority to any other thread */
   t->donee = NULL;
+
+  /* This thread currently has no donated priority */
+  t->old_priority = -1;
+
+  list_init (&t->donators);
+
+  /* Lock for which this thread has donated its priority */
+  t->donated_lock = NULL;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

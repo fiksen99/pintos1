@@ -106,6 +106,12 @@ struct thread
     struct thread *donee;
     /* List elem for lock->donators list */
     struct list_elem donator_elem;
+    /* Priority of holder pre-donation */
+    int old_priority;
+    /* Threads which have donated priority */
+    struct list donators;
+    /* Lock for which this thread has donated its priority */
+    struct lock *donated_lock;
 
     int nice;
 
