@@ -79,7 +79,6 @@ static tid_t allocate_tid (void);
 static void update_recent_cpu (struct thread *t); //updates thread's recent cpu mlfqs
 static void update_load_avg (void);               //updates system load average mlfqs
 static void thread_update_priority_mlfqs (struct thread *t); //updates a threads priority mlfqs
-static void thread_set_thread_priority (struct thread *, int);  //manually set priority mlfqs
 
 static fixed_point load_avg; 			/* current system load average, in fixed point form */
 
@@ -522,12 +521,6 @@ int
 thread_get_priority (void) 
 {
   return thread_current ()->priority;
-}
-
-void
-thread_set_thread_priority (struct thread *t, int new_priority )
-{
-  t->priority = new_priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
