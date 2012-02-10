@@ -106,7 +106,6 @@ struct thread
     struct list_elem donor_elem;
     int overwritten_priority;
 
-    int nice;
 
     struct list_elem sleep_list_elem;
     int nice;                           /* Thread's niceness */

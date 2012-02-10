@@ -77,12 +77,11 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 static void update_recent_cpu (struct thread *t); //updates thread's recent cpu mlfqs
-static void update_priority (struct thread *t);   //updates thread's priority mlfqs
 static void update_load_avg (void);               //updates system load average mlfqs
 static void thread_update_priority_mlfqs (struct thread *t); //updates a threads priority mlfqs
 static void thread_set_thread_priority (struct thread *, int);  //manually set priority mlfqs
 
-static int load_avg; 			/* current system load average */
+static fixed_point load_avg; 			/* current system load average, in fixed point form */
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -120,9 +119,9 @@ thread_init (void)
   if (thread_mlfqs) {
     /* Set the inital values of thread to 0 */
     initial_thread->nice = 0;
-    initial_thread->recent_cpu = 0;
-    load_avg = 0;
-    thread_update_priority_mlfqs (&initial_thread);
+    initial_thread->recent_cpu.value = 0;
+    load_avg.value = 0;
+    thread_update_priority_mlfqs (initial_thread);
   }
 
 }
@@ -163,14 +162,13 @@ thread_tick (void)
   {
 	  if (thread_mlfqs)
     //increment recent_cpu on running thread
-    t->recent_cpu++;
+    add_int (&(t->recent_cpu), 1);
     kernel_ticks++;
   }
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
-<<<<<<< HEAD
   if (thread_mlfqs)
   {
     bool hundred_ticks = timer_ticks() % TIMER_FREQ == 0;
@@ -197,9 +195,7 @@ thread_tick (void)
         intr_yield_on_return();
   }
 
-=======
   // Check the list of sleeping threads to see if any are ready to wake up.
->>>>>>> ba30263bace3487d51d7a8a99af6a2f14986c56d
   while(!list_empty (&sleep_list))
   {
     /* Find out which thread is next to wake up. */
@@ -341,8 +337,8 @@ thread_create (const char *name, int priority,
   if (thread_mlfqs) {
     /* Set the inital mlfqs values of thread */
     t->nice = 0;
-    t->recent_cpu = 0;
-    thread_update_priority_mlfqs (&t); 
+    t->recent_cpu = {0};
+    thread_update_priority_mlfqs (t); 
   }
   
   struct thread *curr = thread_current();
@@ -544,14 +540,14 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  return 100*load_avg;
+  return 100*convert_to_int (load_avg);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  return 100*(thread_current()->recent_cpu);
+  return 100*(convert_to_int (&(thread_current()->recent_cpu)));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -790,22 +786,22 @@ compare_priority_less (const struct list_elem *a, const struct list_elem *b, voi
 void
 update_recent_cpu (struct thread *t)
 {
-  fixed_point old_cpu = { load_avg };
-  fixed_point denominator = { load_avg };
+  fixed_point old_cpu = { load_avg.value };
+  fixed_point denominator = { load_avg.value };
   multiply_int (&old_cpu, 2);
   multiply_int (&denominator, 2);
   add_int (&denominator, 1);
   divide_fixed_point (&old_cpu, &denominator);
-  multiply_int (&old_cpu, t->recent_cpu);
+  multiply_fixed_point (&old_cpu, &(t->recent_cpu));
   add_int (&old_cpu, t->nice);
-  t->recent_cpu = convert_to_int (&old_cpu);  
+  t->recent_cpu.value = old_cpu.value;  
 }
 
 void
 thread_update_priority_mlfqs (struct thread *t)
 {
   fixed_point priority = { convert_to_fixed_point (PRI_MAX) };
-  fixed_point recent_cpu = { t->recent_cpu };
+  fixed_point recent_cpu = { t->recent_cpu.value };
   divide_int (&recent_cpu, 4);
   subtract_fixed_point (&priority, &recent_cpu);
   subtract_int (&priority, t->nice*2);
@@ -823,11 +819,11 @@ update_load_avg (void)
   fixed_point coefficient = { convert_to_fixed_point (59) };
   fixed_point ready_threads = { convert_to_fixed_point (1) };
   divide_int (&coefficient, 60);
-  fixed_point old_load_avg = { load_avg };
+  fixed_point old_load_avg = { load_avg.value };
   multiply_fixed_point (&old_load_avg, &coefficient);
   divide_int (&ready_threads, 60);
   multiply_int (&ready_threads, list_size (&ready_list));
   add_fixed_point (&old_load_avg, &ready_threads);
-  load_avg = convert_to_int (&old_load_avg); 
+  load_avg.value = old_load_avg->value; 
 }
 
