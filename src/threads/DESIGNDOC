@@ -69,6 +69,20 @@ Sahil Jain <sdj09@ic.ac.uk>
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+To ensure that the highest priority thread waiting for a lock, semaphore or
+condition variable wakes up first, we sort the list of waiters using the 
+list_sort function in terms of priority in ascending order, so that the
+waiting thread with the highest priority is at the end of the list. So when
+we call thread_unblock, we pop the thread from the back using list_pop_back,
+and unblock it. This is done in sema_up. For condition variables, we sort the
+cond->waiters list in terms of priority as well using the list_sort function in
+cond_signal, which orders the waiter threads in terms of priority in ascending
+order.
+
+By using this method, we ensure that the highest priority thread waiting for a
+lock, semaphore or condition variable wakes up first. This is demonstrated
+by all the tests passing.
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
