@@ -95,12 +95,27 @@ Sahil Jain <sdj09@ic.ac.uk>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-static int load_avg: the calculated system load average.
+static void update_recent_cpu (struct thread *t);
+//updates thread's recent cpu mlfqs
+
+static void update_load_avg (void);
+//updates system load average mlfqs
+
+static void thread_update_priority_mlfqs (struct thread *t);
+//updates a threads priority mlfqs
+
+static fixed_point load_avg;
+/* current system load average, in fixed point form */
+
+within struct thread:
+    int nice;                           /* Thread's niceness */
+    fixed_point recent_cpu;      /* CPU time the thread has used stored as fixed point */
 
 typedef struct 
 {
 	int value;
-} fixedPoint;: wrapper for an int when it is represented as a fixed point number.
+} fixed_point; 
+// A struct used as a wrapper for an int to represent a fixed point number.
 
 ---- ALGORITHMS ----
 
@@ -112,23 +127,32 @@ typedef struct
 timer  recent_cpu    priority   thread
 ticks   A   B   C   A   B   C   to run
 -----  --  --  --  --  --  --   ------
- 0     0   0   0   
- 4
- 8
-12
-16
-20
-24
-28
-32
-36
+ 0     0   0   0   63  61  59     A
+ 4     4   0   0   62  61  59     A
+ 8     8   0   0   61  61  59     B
+12     8   4   0   61  60  59     A
+16     12  4   0   60  60  59     B
+20     12  8   0   60  59  59     A  
+24     16  8   0   59  59  59     B
+28     16  12  0   59  58  59     C
+32     16  12  4   59  58  58     A
+36     20  12  4   58  58  58     B
 
 >> C3: Did any ambiguities in the scheduler specification make values
 >> in the table uncertain?  If so, what rule did you use to resolve
 >> them?  Does this match the behaviour of your scheduler?
 
+When multiple threads have the same priority, it is unclear which thread should
+run first. We've implemented it so that the previously running thread will be
+the last of these threads to be called.
+
 >> C4: How is the way you divided the cost of scheduling between code
 >> inside and outside interrupt context likely to affect performance?
+
+there is quite a lot of computation run inside thread_tick() which is called in an
+interrupt context so performance could be degraded by this - other interrupts
+could get missed here.
+
 
 ---- RATIONALE ----
 
@@ -137,12 +161,27 @@ ticks   A   B   C   A   B   C   to run
 >> time to work on this part of the task, how might you choose to
 >> refine or improve your design?
 
+as stated above, a lot of computation occurs in the interrupt context. Given
+more time I'd try and move more of this code outside the interrupt. One advantage
+of our code is the use of conditionals based on thread_mlfqs to minimise computation
+if we aren't going to use the advanced scheduler.
+
 >> C6: The assignment explains arithmetic for fixed-point mathematics in
 >> detail, but it leaves it open to you to implement it.  Why did you
 >> decide to implement it the way you did?  If you created an
 >> abstraction layer for fixed-point mathematics, that is, an abstract
 >> data type and/or a set of functions or macros to manipulate
 >> fixed-point numbers, why did you do so?  If not, why not?
+
+The fixed_point struct provided a convenient wrapper for the fixed point integers.
+It took up a tiny amount of extra memory to implement, but provided crucial type
+safety on performing arithmetic with these numbers. Although the program has
+no use for this style of int outside of the priority calcualtions etc. (we can
+assume that the programmer - i.e. us - knows whether the 'int' they are dealing 
+with is a fixed point number or an actual number, it is alot safer to use the 
+fixed_point wrapper. We also used the macro for FRACTION_SIZE to ensure the 
+correct value for converting between fixed point and int was used in every
+function. 
 
                SURVEY QUESTIONS
                ================
