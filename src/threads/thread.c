@@ -159,8 +159,8 @@ thread_tick (void)
   else
   {
 	  if (thread_mlfqs)
-      //increment recent_cpu on running thread
-      t->recent_cpu++;
+    //increment recent_cpu on running thread
+    t->recent_cpu++;
     kernel_ticks++;
   }
   /* Enforce preemption. */
@@ -173,10 +173,11 @@ thread_tick (void)
     if (hundred_ticks)
       update_load_avg ();
     struct list_elem *each_thread;
+	  bool updated_priority;
     for (each_thread = list_begin (&all_list) ; each_thread != list_end (&all_list) ;
          each_thread = list_next (each_thread))
     {
-      if (timer_ticks() % TIME_SLICE == 0)
+      if (updated_priority = timer_ticks() % TIME_SLICE == 0)
       {
         struct thread *this_thread = list_entry (each_thread, struct thread, elem);
         //updates recent_cpu every hundred ticks
@@ -186,7 +187,12 @@ thread_tick (void)
         }
         update_priority (this_thread);
       }
-    }  
+    }
+	  if (updated_priority)
+    {
+      //if priorities have been altered, resort the ready list queue
+      list_sort (&ready_list, compare_priority_less, NULL);
+    }
   }
 
   while(!list_empty (&sleep_list))
