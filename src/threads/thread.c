@@ -161,8 +161,13 @@ thread_tick (void)
   else
   {
 	  if (thread_mlfqs)
-    //increment recent_cpu on running thread
-    add_int (&(t->recent_cpu), 1);
+    {
+//      printf("thread name: %s", thread_name());
+//      printf("running thread's recent cpu: %d\n", convert_to_int(&(t->recent_cpu)));
+     //increment recent_cpu on running thread
+     add_int (&(t->recent_cpu), 1);
+//     printf("running thread's incremented cpu: %d\n", convert_to_int(&(t->recent_cpu)));
+    }
     kernel_ticks++;
   }
   /* Enforce preemption. */
@@ -179,15 +184,18 @@ thread_tick (void)
     for (each_thread = list_begin (&all_list) ; each_thread != list_end (&all_list) ;
          each_thread = list_next (each_thread))
     {
+      //only update priority every timeslice
       if (updated_priority)
       {
-        struct thread *this_thread = list_entry (each_thread, struct thread, elem);
-        //updates recent_cpu every hundred ticks
+        struct thread *this_thread = list_entry (each_thread, struct thread, allelem);
+        //updates recent_cpu for every threadevery hundred ticks
         if (hundred_ticks)
         {
           update_recent_cpu (this_thread);
         }
+//        printf("thread %s recent_cpu: %d\n", this_thread->name, convert_to_int(&(this_thread->recent_cpu)));
         thread_update_priority_mlfqs (this_thread);
+//        printf("thread %s priority: %d\n", this_thread->name, this_thread->priority);
       }
     }
 	  if (updated_priority)
@@ -806,6 +814,7 @@ thread_update_priority_mlfqs (struct thread *t)
   subtract_fixed_point (&priority, &recent_cpu);
   subtract_int (&priority, t->nice*2);
   int new_priority = convert_to_int (&priority);
+//  printf("new priority: %d, should be: %d - %d/4 - %d*2 \n", new_priority, PRI_MAX, convert_to_int(&(t->recent_cpu)), t->nice);
   if (new_priority > PRI_MAX)
     new_priority = PRI_MAX;
   else if(new_priority < PRI_MIN)
@@ -822,8 +831,12 @@ update_load_avg (void)
   fixed_point old_load_avg = { load_avg.value };
   multiply_fixed_point (&old_load_avg, &coefficient);
   divide_int (&ready_threads, 60);
-  multiply_int (&ready_threads, list_size (&ready_list));
+  int size = list_size (&ready_list);
+  if (thread_current() != idle_thread)
+    size++;
+//  printf("ready list size: %d\n", );
+  multiply_int (&ready_threads, size);
   add_fixed_point (&old_load_avg, &ready_threads);
-  load_avg.value = old_load_avg.value; 
+  load_avg.value = old_load_avg.value;
 }
 
