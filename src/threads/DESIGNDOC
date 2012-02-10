@@ -109,6 +109,13 @@ by all the tests passing.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+static int load_avg: the calculated system load average.
+
+typedef struct 
+{
+	int value;
+} fixedPoint;: wrapper for an int when it is represented as a fixed point number.
+
 ---- ALGORITHMS ----
 
 >> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
@@ -119,7 +126,7 @@ by all the tests passing.
 timer  recent_cpu    priority   thread
 ticks   A   B   C   A   B   C   to run
 -----  --  --  --  --  --  --   ------
- 0
+ 0     0   0   0   
  4
  8
 12
