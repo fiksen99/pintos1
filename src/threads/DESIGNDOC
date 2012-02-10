@@ -95,10 +95,28 @@ by all the tests passing.
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
+A potential race in thread_set_priority() is when two different things try
+to access the ready_list. To avoid this, the interrupts are disabled. We could
+use a lock, but we chose not to as it was a tougher implementation.
+
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+We defined two functions, compare_priority_less_equal and compare_priority_less,
+which we needed to sort the ready_list. We needed two different ones because
+when adding to the ready list for priority scheduling, we needed to perform
+round robin scheduling. So for this to happen, we needed to use the
+compare_priority_less_equal, so that instead of adding a thread to the end of 
+the list when there were other threads of the same priority, it would add it just
+before the first thread, which enabled round robin scheduling, as needed in the
+specification. By using these two different functions, we did not need to
+add any functions in list.c, so the work we had to do was significantly reduced
+and the method we implemented was sufficiently efficient.
+
+To sort the list of cond->waiters, we defined compare_sema_less, which compared
+the waiters priority wise again, in the same way as compare_priority_less worked. 
 
               ADVANCED SCHEDULER
               ==================
