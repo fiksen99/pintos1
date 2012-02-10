@@ -31,7 +31,7 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
-/* Task 1 */
+/* List of sleeping threads. */
 static struct list sleep_list;
 
 /* Idle thread. */
@@ -112,10 +112,6 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
-     value to indicate that it is not asleep.*/
-  initial_thread->wake_ticks = 0;
-
   if (thread_mlfqs) {
     /* Set the inital values of thread to 0 */
     initial_thread->nice = 0;
@@ -123,7 +119,6 @@ thread_init (void)
     load_avg.value = 0;
     thread_update_priority_mlfqs (initial_thread);
   }
-
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -162,11 +157,8 @@ thread_tick (void)
   {
 	  if (thread_mlfqs)
     {
-//      printf("thread name: %s", thread_name());
-//      printf("running thread's recent cpu: %d\n", convert_to_int(&(t->recent_cpu)));
      //increment recent_cpu on running thread
      add_int (&(t->recent_cpu), 1);
-//     printf("running thread's incremented cpu: %d\n", convert_to_int(&(t->recent_cpu)));
     }
     kernel_ticks++;
   }
@@ -193,9 +185,7 @@ thread_tick (void)
         {
           update_recent_cpu (this_thread);
         }
-//        printf("thread %s recent_cpu: %d\n", this_thread->name, convert_to_int(&(this_thread->recent_cpu)));
         thread_update_priority_mlfqs (this_thread);
-//        printf("thread %s priority: %d\n", this_thread->name, this_thread->priority);
       }
     }
 	  if (updated_priority)
@@ -337,10 +327,6 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
-  /* Task 1: initialise time (in ticks) when to wake the thread with sentinel
-     value to indicate that it is not asleep.*/
-  t->wake_ticks = 0;
 
   if (thread_mlfqs) {
     /* Set the inital mlfqs values of thread */
@@ -503,14 +489,31 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  struct thread *t = thread_current ();
 
-  //Order the ready list.
-  //check if the current thread has the highest priority.
-  //if not, yield to the next thread.
-  //add current thread to the list and order the list.
+  if (t->old_priority == -1)
+  {
+    /* Thread has no donators, simple change its priority */
+    t->priority = new_priority;
+  }
+  else
+  {
+    /* Thread has donator(s), update backup priority */
+    t->old_priority = new_priority;
+    /* Now choose highest available priority */
+    if (t->old_priority > t->priority)
+    {
+      t->priority = t->old_priority;
+    }
+  }
 
-  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list), struct thread, elem)->priority > new_priority)
+  if (list_empty (&ready_list))
+  {
+    return;
+  }
+  struct thread *highest_ready = list_entry (list_back (&ready_list),
+                                             struct thread, elem);
+  if (highest_ready->priority > t->priority)
     thread_yield();
 }
 
@@ -645,6 +648,21 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  /* Initialise time (in ticks) when to wake the thread with sentinel value to
+     indicate that it is not asleep */
+  t->wake_ticks = 0;  
+
+  /* This thread has currently not donated its priority to any other thread */
+  t->donee = NULL;
+
+  /* This thread currently has no donated priority */
+  t->old_priority = -1;
+
+  list_init (&t->donators);
+
+  /* Lock for which this thread has donated its priority */
+  t->donated_lock = NULL;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -814,7 +832,6 @@ thread_update_priority_mlfqs (struct thread *t)
   subtract_fixed_point (&priority, &recent_cpu);
   subtract_int (&priority, t->nice*2);
   int new_priority = convert_to_int (&priority);
-//  printf("new priority: %d, should be: %d - %d/4 - %d*2 \n", new_priority, PRI_MAX, convert_to_int(&(t->recent_cpu)), t->nice);
   if (new_priority > PRI_MAX)
     new_priority = PRI_MAX;
   else if(new_priority < PRI_MIN)
@@ -834,7 +851,6 @@ update_load_avg (void)
   int size = list_size (&ready_list);
   if (thread_current() != idle_thread)
     size++;
-//  printf("ready list size: %d\n", );
   multiply_int (&ready_threads, size);
   add_fixed_point (&old_load_avg, &ready_threads);
   load_avg.value = old_load_avg.value;

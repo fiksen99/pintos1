@@ -99,18 +99,23 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    /* Task 1 non-busy sleep addition */
-    // time (in ticks) when to wake the thread (0 otherwise)
+    /* Time (in ticks) when to wake the thread (0 if thread is not sleeping) */
     int64_t wake_ticks;
 
-    struct list_elem donor_elem;
-    int overwritten_priority;
+    /* The thread that this thread has donated its priority to in an attempt to
+       speed up acquiring a lock */
+    struct thread *donee;
+    /* List elem for lock->donators list */
+    struct list_elem donator_elem;
+    /* Priority of holder pre-donation */
+    int old_priority;
+    /* Threads which have donated priority */
+    struct list donators;
+    /* Lock for which this thread has donated its priority */
+    struct lock *donated_lock;
 
-
-    struct list_elem sleep_list_elem;
     int nice;                           /* Thread's niceness */
     fixed_point recent_cpu;      /* CPU time the thread has used */
-
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
@@ -121,7 +126,7 @@ struct thread
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
 
-/* Task 1 */
+/* Sends the current thread to sleep until wake_ticks have elapsed (in total) */
 void thread_sleep (int64_t wake_ticks);
 
 void thread_init (void);
@@ -155,7 +160,7 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-/* Methods added by us for Task 1 */
+/* list_less_func for ordering lists by priority */
 bool compare_priority_less (const struct list_elem *, const struct list_elem *, void *aux);
 
 #endif /* threads/thread.h */
