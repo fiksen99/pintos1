@@ -383,7 +383,7 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   t->status = THREAD_READY; 
-  list_insert_ordered (&ready_list, &t->elem, compare_priority_less, NULL);
+  list_insert_ordered (&ready_list, &t->elem, compare_priority_less_equal, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
   if (t->priority > thread_current ()->priority && thread_current () != idle_thread)
@@ -461,7 +461,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    list_insert_ordered (&ready_list, &cur->elem, compare_priority_less, NULL);
+    list_insert_ordered (&ready_list, &cur->elem, compare_priority_less_equal, NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -797,6 +797,13 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
    otherwise */
 bool
 compare_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+  return list_entry(a, struct thread, elem)->priority 
+         < list_entry(b, struct thread, elem)->priority;
+}
+
+bool
+compare_priority_less_equal (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
   return list_entry(a, struct thread, elem)->priority 
          <= list_entry(b, struct thread, elem)->priority;

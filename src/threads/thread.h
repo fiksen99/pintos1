@@ -162,5 +162,5 @@ int thread_get_load_avg (void);
 
 /* list_less_func for ordering lists by priority */
 bool compare_priority_less (const struct list_elem *, const struct list_elem *, void *aux);
-
+bool compare_priority_less_equal (const struct list_elem *, const struct list_elem *, void *aux);
 #endif /* threads/thread.h */
