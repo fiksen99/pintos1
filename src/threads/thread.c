@@ -175,11 +175,11 @@ thread_tick (void)
     if (hundred_ticks)
       update_load_avg ();
     struct list_elem *each_thread;
-	  bool updated_priority;
+	  bool updated_priority = (timer_ticks() % TIME_SLICE == 0);
     for (each_thread = list_begin (&all_list) ; each_thread != list_end (&all_list) ;
          each_thread = list_next (each_thread))
     {
-      if (updated_priority = (timer_ticks() % TIME_SLICE == 0))
+      if (updated_priority)
       {
         struct thread *this_thread = list_entry (each_thread, struct thread, elem);
         //updates recent_cpu every hundred ticks
@@ -337,7 +337,7 @@ thread_create (const char *name, int priority,
   if (thread_mlfqs) {
     /* Set the inital mlfqs values of thread */
     t->nice = 0;
-    t->recent_cpu = {0};
+    t->recent_cpu.value = 0;
     thread_update_priority_mlfqs (t); 
   }
   
@@ -540,7 +540,7 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  return 100*convert_to_int (load_avg);
+  return 100*convert_to_int (&load_avg);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
@@ -824,6 +824,6 @@ update_load_avg (void)
   divide_int (&ready_threads, 60);
   multiply_int (&ready_threads, list_size (&ready_list));
   add_fixed_point (&old_load_avg, &ready_threads);
-  load_avg.value = old_load_avg->value; 
+  load_avg.value = old_load_avg.value; 
 }
 

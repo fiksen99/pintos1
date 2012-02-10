@@ -109,7 +109,7 @@ struct thread
 
     struct list_elem sleep_list_elem;
     int nice;                           /* Thread's niceness */
-    int recent_cpu;      /* CPU time the thread has used */
+    fixed_point recent_cpu;      /* CPU time the thread has used */
 
 
     /* Owned by thread.c. */
